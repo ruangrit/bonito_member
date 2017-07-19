@@ -1,8 +1,52 @@
 <?php
 
 function bonito_user_presave(&$edit, $account, $category) {
-  dpm($edit);
-  dpm($account);
-  dpm($category);
-  // Todo render user ID from roles
+
+	$vip_rid = 4;
+	$exclusive_rid = 5;
+	$blue_rid = 6;
+  // Find role  
+  foreach ($edit['roles'] as $key => $value) {
+    if ($value !== 0 && $value !== TRUE) {
+      $role = $value;
+    }
+  }
+
+  if ($role == 4) {
+  	$user_count = _get_count_user_in_role($role);
+  	$edit['field_user_id']['und'][0]['value'] = 'VIP'._get_number_digit(3, $user_count+1);
+  }
+  elseif ($role == 5 || $role == 6) {
+
+  	if ($role == 5) {
+  		$prefix = 'EX';
+  	}
+  	else {
+  		$prefix = 'B';
+  	}
+
+  	$user_count = _get_count_user_in_role($role);
+  	$parent = user_load($edit['field_user_parrent']['und'][0]['uid']);
+  	$parent_code = $parent->field_user_id['und'][0]['value'];
+  	$edit['field_user_id']['und'][0]['value'] = $parent_code.'-'.$prefix._get_number_digit(3, $user_count+1);
+  }
+
+}
+
+function _get_count_user_in_role($rid) {
+  $query = "
+  SELECT COUNT(*)
+  FROM {users} u INNER JOIN {users_roles} ur ON u.uid = ur.uid
+  WHERE rid = :rid;
+  ";
+  $count = db_query($query, array(':rid' => $rid))->fetchField();
+  
+  return $count; 
+}
+
+function _get_number_digit($digit, $number) {
+	return $x_string =  substr("00000".$number,-$digit,$digit);	
+}
+
+function bonito_init() {
 }
